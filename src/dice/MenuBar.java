@@ -7,6 +7,7 @@ package dice;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import javax.swing.ButtonGroup;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -19,6 +20,7 @@ import javax.swing.JRadioButtonMenuItem;
 public class MenuBar {
     private enum gameType {SCORE, GUESS} ;
     private gameType gameTypeFlag;
+    private ArrayList<MenuBarListener> listeners = new ArrayList<>();
     
     public MenuBar(){
         gameTypeFlag = gameType.SCORE;
@@ -43,6 +45,7 @@ public class MenuBar {
                 gameTypeFlag = gameType.SCORE;
                 //setMenu("Максимальный счёт");
                 menuGameType.setText("Максимальный счёт");
+                fireListeners();
                 System.out.println("Menu changed to Максимальный счёт");
             }
         });
@@ -52,6 +55,7 @@ public class MenuBar {
                 gameTypeFlag = gameType.GUESS;
                 //setMenu("Максимальный счёт");
                 menuGameType.setText("Интуиция");
+                fireListeners();
                 System.out.println("Menu changed to Интуиция");
             }
         });
@@ -75,4 +79,20 @@ public class MenuBar {
     boolean isGuessGame(){
         return gameTypeFlag == gameType.GUESS;
     }
+    
+    public void addListener(MenuBarListener listener){
+        listeners.add(listener);
+    }
+    public void removeListener(MenuBarListener listener){
+        listeners.remove(listener);
+    }
+    public void fireListeners(){
+        for(MenuBarListener listener :listeners){
+            listener.onGameTypeChange();
+        }
+    }
+}
+
+interface MenuBarListener{
+    void onGameTypeChange();
 }

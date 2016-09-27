@@ -37,13 +37,8 @@ public class Dice {
     MenuBar menuBar;
        
     private int overAllSumm = 0;
-    private int numOfRolls = 0;
-    
-    
-
-    
-    
-
+    private int numOfRolls = 0, numOfDiceToRoll;
+  
     /**
      * @param args the command line arguments
     */
@@ -69,37 +64,18 @@ public class Dice {
         
         menuBar = new MenuBar();
         f.setJMenuBar(menuBar.getMenuBar());
+        menuBar.addListener(new MenuBarListener(){ //if type of game is changed
+            @Override
+            public void onGameTypeChange() {
+                if(menuBar.isGuessGame())midPanel.setGuess();
+                else midPanel.setScore();
+            }
+            
+        });
         upPanel = getGuiPanel();
         
         midPanel = new DataPanel();
-        /*
-        midPanel = new JPanel(new SpringLayout());
-        midPanel.add(new JLabel("Броски"));
-        labelNumOfRolls = new JLabel("0");
-        labelNumOfRolls.setFont(new Font("Courier New", Font.BOLD,50));
-        labelNumOfRolls.setForeground(Color.blue);
-        labelNumOfRolls.setHorizontalAlignment(SwingConstants.CENTER);
-        midPanel.add(labelNumOfRolls);
-        midPanel.add(new JLabel("Очки"));
-        labelSumm = new JLabel("0");
-        labelSumm.setFont(new Font("Courier New", Font.BOLD,50));
-        labelSumm.setForeground(Color.green);
-        labelSumm.setHorizontalAlignment(SwingConstants.CENTER);
-        midPanel.add(labelSumm);
-        midPanel.add(new JLabel("Сумма"));
-        labelOverAllSumm = new JLabel("0");
-        labelOverAllSumm.setFont(new Font("Courier New", Font.BOLD,50));
-        labelOverAllSumm.setForeground(Color.red);
-        labelOverAllSumm.setHorizontalAlignment(SwingConstants.CENTER);
-        midPanel.add(labelOverAllSumm);
-        midPanel.setBackground(Color.white);
-         //Lay out the panel.
-        SpringUtilities.makeGrid(midPanel,
-                                 3, 2, //rows, cols
-                                 150, 20, //initialX, initialY
-                                 10, 5);//xPad, yPad
-
-        */
+        
         lowPanel = new JPanel();
         lowPanel.setBackground(Color.white);
         
@@ -138,6 +114,16 @@ public class Dice {
         
             
         numOfDice = new JComboBox(choices);
+        numOfDice.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                String selection = (String)numOfDice.getSelectedItem();
+                numOfDiceToRoll = Integer.parseInt(selection);
+          
+                midPanel.setNumOfDice(numOfDiceToRoll);
+                midPanel.updateUI();
+            }           
+        });
         
         buttonStart.addActionListener(new StartListener());
         buttonStop.addActionListener(new RollEmListener());
@@ -197,16 +183,7 @@ public class Dice {
         @Override
         public void run() {
             diceRollingArr = new ArrayList<>();  //stores thereads of one rolling die
-            String selection = (String)numOfDice.getSelectedItem();
-            int numOfDiceToRoll = Integer.parseInt(selection);
-            
-            //set midPanel
-            if(menuBar.isGuessGame())midPanel.setGuess();
-            else midPanel.setScore();
-            
-            midPanel.setNumOfDice(numOfDiceToRoll);
-            
-            
+    
             lowPanel.removeAll();
              
             for(int i = 0; i < numOfDiceToRoll; i++){  //fill array with thread rolling dice
@@ -246,20 +223,7 @@ public class Dice {
             lowPanel.updateUI();
             
             midPanel.recalculate(summ);
-            //overAllSumm += summ;
-            //numOfRolls++;
-            
-            //f.getContentPane().remove(midPanel);
            
-            
-            //labelNumOfRolls.setText(Integer.toString(numOfRolls));
-            //labelSumm.setText(Integer.toString(summ));
-            //labelOverAllSumm.setText(Integer.toString(overAllSumm));
-
-            
-            //midPanel.repaint();
-            
-            //f.getContentPane().add(BorderLayout.CENTER,midPanel);
             midPanel.updateUI();
            
             timerLabel.stopTimer();   
@@ -273,7 +237,7 @@ public class Dice {
 class DataPanel extends JPanel{
     private enum gameType {SCORE, GUESS} ;
     private gameType gameTypeFlag;
-    private int points, overAllSum, numOfRolls, numOfDice;
+    private int points, overAllSum, numOfRolls, numOfDiceToRoll;
     private int minPoints, maxPoints, guessPoints, guessDiff;
     private final JPanel guessPanel1, guessPanel2, scorePanel;
     private JSlider slider;
@@ -287,8 +251,11 @@ class DataPanel extends JPanel{
         points = 0;
         overAllSum = 0;
         numOfRolls = 0;
-        numOfDice = 1;
-        setMargins(numOfDice);
+        numOfDiceToRoll = 1;
+        
+        minPoints = numOfDiceToRoll;
+        maxPoints = numOfDiceToRoll*6;
+        guessPoints = (maxPoints + minPoints)/2; // initial guessPoints is in the middle 
         
         //dataPanel = new JPanel();
         guessPanel1 = new JPanel(new SpringLayout());
@@ -366,7 +333,7 @@ class DataPanel extends JPanel{
         labelGuess.setHorizontalAlignment(SwingConstants.CENTER);
         
         
-        slider = new JSlider(SwingConstants.HORIZONTAL,minPoints,maxPoints,1);
+        slider = new JSlider(SwingConstants.HORIZONTAL,minPoints,maxPoints,guessPoints);
         slider.setMajorTickSpacing(10);
         slider.setMinorTickSpacing(1);
         slider.setPaintTicks(true);
@@ -394,12 +361,14 @@ class DataPanel extends JPanel{
     private void setMargins(int numOfDice){
         minPoints = numOfDice;
         maxPoints = numOfDice*6;
-        guessPoints = (maxPoints - minPoints)/2;
-        guessDiff = 0;
+        //if(guessPoints == 0)guessPoints = (maxPoints + minPoints)/2; // initial guessPoints is in the middle 
+        //guessDiff = 0;
+        slider.setMaximum(maxPoints);
+        slider.setMinimum(minPoints);
         
     }
     public void setNumOfDice(int numOfDice){
-        this.numOfDice = numOfDice;
+        numOfDiceToRoll = numOfDice;
         setMargins(numOfDice);
     }
     public JPanel getDataPanel(){
@@ -450,9 +419,11 @@ class DataPanel extends JPanel{
         labelOverAllSumm.setText(Integer.toString(overAllSum));
         labelPrecision.setText(Integer.toString(guessDiff));
         
-        guessPanel1.repaint();
-        guessPanel2.repaint();
-        scorePanel.repaint();
+        setPanel();
+        
+        //guessPanel1.repaint();
+        //guessPanel2.repaint();
+        //scorePanel.repaint();
     }
     
 }
